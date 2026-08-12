@@ -1,0 +1,341 @@
+{
+  "categories": [
+    {
+      "id": "cat_1",
+      "name": "Fresh Produce",
+      "icon": "🥗",
+      "slug": "fresh-produce"
+    },
+    {
+      "id": "cat_2",
+      "name": "Dairy & Eggs",
+      "icon": "🥛",
+      "slug": "dairy-eggs"
+    },
+    {
+      "id": "cat_3",
+      "name": "Bakery & Bread",
+      "icon": "🍞",
+      "slug": "bakery-bread"
+    },
+    {
+      "id": "cat_4",
+      "name": "Beverages",
+      "icon": "🧃",
+      "slug": "beverages"
+    },
+    {
+      "id": "cat_5",
+      "name": "Snacks & Munchies",
+      "icon": "🍿",
+      "slug": "snacks"
+    },
+    {
+      "id": "cat_6",
+      "name": "Household & Pantry",
+      "icon": "🌾",
+      "slug": "household"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod_1",
+      "name": "Fresh Red Apples",
+      "category": "cat_1",
+      "categoryName": "Fresh Produce",
+      "price": 450,
+      "unit": "1 kg",
+      "stock": 43,
+      "lowStockLimit": 10,
+      "image": "🍎",
+      "description": "Crisp and juicy sweet red apples imported fresh daily."
+    },
+    {
+      "id": "prod_2",
+      "name": "Organic Cavendish Bananas",
+      "category": "cat_1",
+      "categoryName": "Fresh Produce",
+      "price": 280,
+      "unit": "1 kg",
+      "stock": 29,
+      "lowStockLimit": 8,
+      "image": "🍌",
+      "description": "Naturally ripened sweet yellow bananas packed with potassium."
+    },
+    {
+      "id": "prod_3",
+      "name": "Full Cream Fresh Milk",
+      "category": "cat_2",
+      "categoryName": "Dairy & Eggs",
+      "price": 520,
+      "unit": "1 Liter",
+      "stock": 17,
+      "lowStockLimit": 5,
+      "image": "🥛",
+      "description": "Pasteurized pure whole milkrich in calcium and cream."
+    },
+    {
+      "id": "prod_4",
+      "name": "Farm Fresh Brown Eggs",
+      "category": "cat_2",
+      "categoryName": "Dairy & Eggs",
+      "price": 420,
+      "unit": "10 Pack",
+      "stock": 25,
+      "lowStockLimit": 5,
+      "image": "🥚",
+      "description": "Grade-A free range brown eggs high in protein."
+    },
+    {
+      "id": "prod_5",
+      "name": "Artisanal Whole Wheat Bread",
+      "category": "cat_3",
+      "categoryName": "Bakery & Bread",
+      "price": 340,
+      "unit": "400g Loaf",
+      "stock": 12,
+      "lowStockLimit": 4,
+      "image": "🍞",
+      "description": "Freshly baked whole grain sliced bread, high in fiber."
+    },
+    {
+      "id": "prod_6",
+      "name": "Butter Croissants",
+      "category": "cat_3",
+      "categoryName": "Bakery & Bread",
+      "price": 260,
+      "unit": "2 Pack",
+      "stock": 4,
+      "lowStockLimit": 5,
+      "image": "🥐",
+      "description": "Flaky, buttery gold croissants fresh from the oven."
+    },
+    {
+      "id": "prod_7",
+      "name": "Sparkling Orange Juice",
+      "category": "cat_4",
+      "categoryName": "Beverages",
+      "price": 390,
+      "unit": "500 ml",
+      "stock": 35,
+      "lowStockLimit": 10,
+      "image": "🍊",
+      "description": "100% natural orange nectar pressed with pulp."
+    },
+    {
+      "id": "prod_8",
+      "name": "Pure Ceylon Green Tea",
+      "category": "cat_4",
+      "categoryName": "Beverages",
+      "price": 680,
+      "unit": "100g Box",
+      "stock": 20,
+      "lowStockLimit": 5,
+      "image": "🍵",
+      "description": "Premium highland single-origin Ceylon green tea leaves."
+    },
+    {
+      "id": "prod_9",
+      "name": "Roasted Salted Cashews",
+      "category": "cat_5",
+      "categoryName": "Snacks & Munchies",
+      "price": 890,
+      "unit": "250g Pack",
+      "stock": 15,
+      "lowStockLimit": 5,
+      "image": "🥜",
+      "description": "Crunchy oven-roasted local cashew nuts with sea salt."
+    },
+    {
+      "id": "prod_10",
+      "name": "Basmati White Rice",
+      "category": "cat_6",
+      "categoryName": "Household & Pantry",
+      "price": 1450,
+      "unit": "5 kg Bag",
+      "stock": 40,
+      "lowStockLimit": 10,
+      "image": "🌾",
+      "description": "Long grain aromatic royal Basmati rice."
+    }
+  ],
+  "users": [
+    {
+      "id": "usr_cust1",
+      "name": "Kasun Perera",
+      "email": "kasun@gmail.com",
+      "phone": "+94 77 123 4567",
+      "role": "customer",
+      "password": "customer123"
+    },
+    {
+      "id": "usr_staff1",
+      "name": "Sunil (Shop Staff)",
+      "email": "staff@grocery.com",
+      "phone": "+94 71 987 6543",
+      "role": "staff",
+      "password": "staff123"
+    },
+    {
+      "id": "usr_admin1",
+      "name": "Nimal (Shop Manager)",
+      "email": "admin@grocery.com",
+      "phone": "+94 70 000 1122",
+      "role": "admin",
+      "password": "admin123"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-9076",
+      "customerId": "usr_cust1",
+      "customerName": "dinan randiya",
+      "customerPhone": "0772550616",
+      "items": [
+        {
+          "id": "prod_1",
+          "name": "Fresh Red Apples",
+          "price": 450,
+          "unit": "1 kg",
+          "quantity": 2,
+          "subtotal": 900,
+          "image": "🍎"
+        },
+        {
+          "id": "prod_2",
+          "name": "Organic Cavendish Bananas",
+          "price": 280,
+          "unit": "1 kg",
+          "quantity": 1,
+          "subtotal": 280,
+          "image": "🍌"
+        },
+        {
+          "id": "prod_3",
+          "name": "Full Cream Fresh Milk",
+          "price": 520,
+          "unit": "1 Liter",
+          "quantity": 1,
+          "subtotal": 520,
+          "image": "🥛"
+        }
+      ],
+      "totalAmount": 1700,
+      "paymentMethod": "Cash on Pickup",
+      "status": "Completed",
+      "pickupPin": "5472",
+      "notes": "xxxxxx",
+      "timestamp": "2026-08-06T08:40:56.849Z",
+      "updatedAt": "2026-08-06T08:45:46.246Z"
+    },
+    {
+      "id": "ORD-9021",
+      "customerId": "usr_cust1",
+      "customerName": "Kasun Perera",
+      "customerPhone": "+94 77 123 4567",
+      "items": [
+        {
+          "id": "prod_1",
+          "name": "Fresh Red Apples",
+          "price": 450,
+          "unit": "1 kg",
+          "quantity": 2,
+          "subtotal": 900
+        },
+        {
+          "id": "prod_3",
+          "name": "Full Cream Fresh Milk",
+          "price": 520,
+          "unit": "1 Liter",
+          "quantity": 1,
+          "subtotal": 520
+        }
+      ],
+      "totalAmount": 1420,
+      "paymentMethod": "Cash on Pickup",
+      "status": "Ready for Pickup",
+      "pickupPin": "4819",
+      "notes": "Please pack milk carefully.",
+      "timestamp": "2026-08-06T12:30:00.000Z",
+      "updatedAt": "2026-08-06T12:45:00.000Z"
+    },
+    {
+      "id": "ORD-9020",
+      "customerId": "usr_cust1",
+      "customerName": "Kamal Fernando",
+      "customerPhone": "+94 76 555 8899",
+      "items": [
+        {
+          "id": "prod_5",
+          "name": "Artisanal Whole Wheat Bread",
+          "price": 340,
+          "unit": "400g Loaf",
+          "quantity": 1,
+          "subtotal": 340
+        },
+        {
+          "id": "prod_4",
+          "name": "Farm Fresh Brown Eggs",
+          "price": 420,
+          "unit": "10 Pack",
+          "quantity": 1,
+          "subtotal": 420
+        }
+      ],
+      "totalAmount": 760,
+      "paymentMethod": "Cash on Pickup",
+      "status": "Completed",
+      "pickupPin": "1092",
+      "notes": "",
+      "timestamp": "2026-08-06T10:15:00.000Z",
+      "updatedAt": "2026-08-06T11:00:00.000Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif_1786005946246_nqjz",
+      "customerId": "usr_cust1",
+      "orderId": "ORD-9076",
+      "message": "✅ Order #ORD-9076 completed! Thank you for shopping with us.",
+      "type": "completed",
+      "read": false,
+      "timestamp": "2026-08-06T08:45:46.246Z"
+    },
+    {
+      "id": "notif_1786005858762_9kgt",
+      "customerId": "usr_cust1",
+      "orderId": "ORD-9076",
+      "message": "🎉 Your Order #ORD-9076 is READY FOR PICKUP! Please bring Rs. 1,700 cash to the shop. Pickup PIN: 5472",
+      "type": "ready_for_pickup",
+      "read": false,
+      "timestamp": "2026-08-06T08:44:18.762Z"
+    },
+    {
+      "id": "notif_1786005806365_pset",
+      "customerId": "usr_cust1",
+      "orderId": "ORD-9076",
+      "message": "👨‍🍳 Shop staff started PREPARING your order #ORD-9076!",
+      "type": "preparing",
+      "read": false,
+      "timestamp": "2026-08-06T08:43:26.365Z"
+    },
+    {
+      "id": "notif_1786005656854_gd2p",
+      "customerId": "usr_cust1",
+      "orderId": "ORD-9076",
+      "message": "🛒 Order #ORD-9076 placed successfully! Status: Pending. Total: Rs. 1,700 (Cash on Pickup).",
+      "type": "order_placed",
+      "read": false,
+      "timestamp": "2026-08-06T08:40:56.854Z"
+    },
+    {
+      "id": "notif_1",
+      "customerId": "usr_cust1",
+      "orderId": "ORD-9021",
+      "message": "🎉 Your Order #ORD-9021 is READY FOR PICKUP! Please bring Rs. 1,420 cash to the shop. Pickup PIN: 4819",
+      "type": "ready_for_pickup",
+      "read": false,
+      "timestamp": "2026-08-06T12:45:00.000Z"
+    }
+  ]
+}
