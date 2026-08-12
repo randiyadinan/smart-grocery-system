@@ -235,18 +235,24 @@ const CustomerPortal = {
 
   const newQuantity = Number(item.quantity) + Number(change);
 
+  // Remove item when quantity reaches 0
   if (newQuantity <= 0) {
     this.cart = this.cart.filter(
       i => String(i.id) !== String(productId)
     );
-  } else {
+  }
+  // Do not allow quantity above available stock
+  else if (newQuantity > Number(item.stock)) {
+    Utils.showToast(`Only ${item.stock} items available in stock.`, 'warning');
+    return;
+  }
+  else {
     item.quantity = newQuantity;
     item.subtotal = Number(item.quantity) * Number(item.price);
   }
 
   this.updateCartUI();
 },
-
   updateCartUI() {
     const cartCount = document.getElementById('cartCount');
     const cartItemsList = document.getElementById('cartItemsList');
