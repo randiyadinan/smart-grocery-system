@@ -226,17 +226,26 @@ const CustomerPortal = {
   },
 
   updateCartQuantity(productId, change) {
-    const item = this.cart.find(i => i.id === productId);
-    if (!item) return;
+  const item = this.cart.find(i => String(i.id) === String(productId));
 
-    item.quantity += change;
-    if (item.quantity <= 0) {
-      this.cart = this.cart.filter(i => i.id !== productId);
-    } else {
-      item.subtotal = item.quantity * item.price;
-    }
-    this.updateCartUI();
-  },
+  if (!item) {
+    console.error('Cart item not found:', productId);
+    return;
+  }
+
+  const newQuantity = Number(item.quantity) + Number(change);
+
+  if (newQuantity <= 0) {
+    this.cart = this.cart.filter(
+      i => String(i.id) !== String(productId)
+    );
+  } else {
+    item.quantity = newQuantity;
+    item.subtotal = Number(item.quantity) * Number(item.price);
+  }
+
+  this.updateCartUI();
+},
 
   updateCartUI() {
     const cartCount = document.getElementById('cartCount');
