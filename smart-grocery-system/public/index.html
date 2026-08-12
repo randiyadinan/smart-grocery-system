@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Grocery Shop Management System</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <span class="brand-icon">🛒</span>
+        <div class="brand-text">
+          <span class="brand-title">SmartGrocery</span>
+          <span class="brand-subtitle">Shop & Pickup System</span>
+        </div>
+      </div>
+
+      <!-- User Profile Badge & Logout -->
+      <div class="user-profile-bar hidden" id="userProfileBar">
+        <div class="user-badge" id="userBadge">
+          <span class="user-avatar" id="userAvatar">👤</span>
+          <div class="user-info">
+            <span class="user-name" id="userName">Guest</span>
+            <span class="user-role" id="userRole">Role</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="logoutBtn" title="Log Out">
+          🚪 Logout
+        </button>
+      </div>
+
+      <!-- Header Action Icons (Notifications & Cart) -->
+      <div class="header-actions hidden" id="headerActions">
+        <!-- Notification Bell -->
+        <div class="notif-wrapper" id="notifWrapper">
+          <button class="icon-btn" id="notifBtn" title="Notifications">
+            🔔
+            <span class="badge notif-badge hidden" id="notifCount">0</span>
+          </button>
+          
+          <!-- Notifications Dropdown Popover -->
+          <div class="notif-dropdown hidden" id="notifDropdown">
+            <div class="notif-header">
+              <h3>Notifications</h3>
+              <button class="text-btn" id="markReadBtn">Mark all as read</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <div class="empty-notif">No notifications yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cart Button -->
+        <button class="cart-trigger-btn" id="cartTriggerBtn">
+          🛒 Cart
+          <span class="badge cart-badge" id="cartCount">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ========================================== -->
+  <!-- 0. CUSTOMER AUTHENTICATION VIEW            -->
+  <!-- ========================================== -->
+  <section id="authView" class="auth-wrapper container">
+    <div class="auth-card">
+      
+      <!-- Customer Header -->
+      <div class="auth-header" id="authCardHeader">
+        <span class="auth-icon">🛒</span>
+        <h2 id="authTitle">Customer Sign In</h2>
+        <p id="authSub">Welcome to SmartGrocery! Sign in to order fresh groceries & pay cash on pickup.</p>
+      </div>
+
+      <!-- Login / Signup Toggle -->
+      <div class="auth-type-toggle" id="customerToggleBar">
+        <button class="toggle-btn active" id="showLoginBtn">Sign In</button>
+        <button class="toggle-btn" id="showRegisterBtn">New Account</button>
+      </div>
+
+      <!-- Customer Login Form -->
+      <form id="loginForm" class="auth-form">
+        <input type="hidden" id="loginRoleInput" value="customer">
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="loginEmail" required placeholder="Enter your email address">
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginSubmitBtn">
+          Sign In & Start Shopping ➔
+        </button>
+      </form>
+
+      <!-- Customer Register Form -->
+      <form id="registerForm" class="auth-form hidden">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="regName" placeholder="e.g. Kasun Perera">
+        </div>
+
+        <div class="form-group">
+          <label>Email Address *</label>
+          <input type="email" id="regEmail" placeholder="e.g. kasun@gmail.com">
+        </div>
+
+        <div class="form-group">
+          <label>Mobile Phone Number *</label>
+          <input type="tel" id="regPhone" placeholder="e.g. +94 77 123 4567">
+        </div>
+
+        <div class="form-group">
+          <label>Create Password *</label>
+          <input type="password" id="regPassword" placeholder="At least 6 characters">
+        </div>
+
+        <button type="submit" class="btn btn-success btn-block btn-lg">
+          Create Customer Account & Sign In ➔
+        </button>
+      </form>
+
+      <!-- Staff & Admin Separate Access Link -->
+      <div class="staff-access-footer">
+        <button class="text-btn-subtle" id="openStaffAuthBtn">
+          👨‍💼 Shop Staff or Admin Portal Access ➔
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- Staff & Admin Login Modal -->
+  <div class="modal-overlay hidden" id="staffAuthModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>👨‍💼 Staff & Admin Portal Sign In</h3>
+        <button class="close-btn" id="closeStaffAuthBtn">&times;</button>
+      </div>
+      <form id="staffAuthForm" class="modal-body">
+        <div class="info-alert">
+          🔐 Authorized Shop Personnel Only. Please select your role and enter staff credentials.
+        </div>
+
+        <div class="form-group">
+          <label>Select Portal Role *</label>
+          <select id="staffRoleSelect" required>
+            <option value="staff">👨‍🍳 Shop Staff / Cashier</option>
+            <option value="admin">📊 Shop Admin Manager</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Staff Email *</label>
+          <input type="email" id="staffEmailInput" required placeholder="Enter staff email">
+        </div>
+
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="staffPasswordInput" required placeholder="••••••••">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelStaffAuthBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-lg">Sign In to Portal ➔</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Main Views Container -->
+  <main class="main-content container">
+
+    <!-- ========================================== -->
+    <!-- 1. CUSTOMER PORTAL VIEW                    -->
+    <!-- ========================================== -->
+    <section id="customerView" class="view-section hidden">
+      <!-- Hero Banner -->
+      <div class="hero-card">
+        <div class="hero-text">
+          <span class="hero-badge">⚡ Fresh Grocery Express</span>
+          <h2>Order Online, Pay Cash on Pickup</h2>
+          <p>Order fresh fruits, dairy, bakery & everyday essentials. We prepare your order, notify you when ready, and you pay cash at pickup!</p>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat-item">
+            <span class="stat-num">100%</span>
+            <span class="stat-lbl">Fresh Quality</span>
+          </div>
+          <div class="hero-stat-item">
+            <span class="stat-num">15 Min</span>
+            <span class="stat-lbl">Fast Preparation</span>
+          </div>
+          <div class="hero-stat-item">
+            <span class="stat-num">💵 Cash</span>
+            <span class="stat-lbl">On Pickup</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Search Filter Bar -->
+      <div class="catalog-controls">
+        <!-- Search Input -->
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search fresh fruits, milk, bread, snacks...">
+        </div>
+
+        <!-- Order Tracker Modal Trigger -->
+        <button class="btn btn-secondary" id="openOrdersBtn">
+          📋 My Orders & Status (<span id="myOrdersCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Category Chips Filter -->
+      <div class="category-bar" id="categoryBar">
+        <button class="cat-chip active" data-category="all">All Items</button>
+      </div>
+
+      <!-- Product Catalog Grid -->
+      <div class="products-grid" id="productsGrid"></div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 2. SHOP STAFF PORTAL VIEW                  -->
+    <!-- ========================================== -->
+    <section id="staffView" class="view-section hidden">
+      <div class="section-header">
+        <div>
+          <h2>👨‍🍳 Shop Staff & Order Processing Board</h2>
+          <p class="section-desc">Manage incoming orders, update pickup status, and auto-notify customers when ready.</p>
+        </div>
+        <button class="btn btn-primary" id="openAddProductBtn">➕ Add New Product</button>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="ordersTab">📦 Live Order Queue</button>
+        <button class="tab-btn" data-tab="stockTab">📊 Inventory & Stock Control</button>
+      </div>
+
+      <!-- Tab Content: Live Order Queue -->
+      <div class="tab-content" id="ordersTab">
+        <div class="order-columns-grid">
+          <!-- Pending Column -->
+          <div class="order-col">
+            <div class="col-header pending-head">
+              <span>⏳ Pending Orders</span>
+              <span class="col-count" id="pendingCount">0</span>
+            </div>
+            <div class="order-card-list" id="pendingList"></div>
+          </div>
+
+          <!-- Preparing Column -->
+          <div class="order-col">
+            <div class="col-header preparing-head">
+              <span>👨‍🍳 Preparing</span>
+              <span class="col-count" id="preparingCount">0</span>
+            </div>
+            <div class="order-card-list" id="preparingList"></div>
+          </div>
+
+          <!-- Ready for Pickup Column -->
+          <div class="order-col">
+            <div class="col-header ready-head">
+              <span>🎉 Ready for Pickup</span>
+              <span class="col-count" id="readyCount">0</span>
+            </div>
+            <div class="order-card-list" id="readyList"></div>
+          </div>
+
+          <!-- Completed Column -->
+          <div class="order-col">
+            <div class="col-header completed-head">
+              <span>✅ Completed</span>
+              <span class="col-count" id="completedCount">0</span>
+            </div>
+            <div class="order-card-list" id="completedList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content: Stock Management -->
+      <div class="tab-content hidden" id="stockTab">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Product Stock Levels</h3>
+            <input type="text" id="stockSearchInput" placeholder="Filter inventory..." class="small-input">
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price (Rs.)</th>
+                <th>Current Stock</th>
+                <th>Stock Status</th>
+                <th>Quick Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stockTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 3. ADMIN PORTAL VIEW                       -->
+    <!-- ========================================== -->
+    <section id="adminView" class="view-section hidden">
+      <div class="section-header">
+        <div>
+          <h2>📊 Shop Management & Analytics Dashboard</h2>
+          <p class="section-desc">Real-time revenue, order metrics, staff management, and category control.</p>
+        </div>
+        <button class="btn btn-secondary" id="exportReportBtn">📥 Export Sales Summary</button>
+      </div>
+
+      <!-- KPI Summary Cards Grid -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon icon-emerald">💵</div>
+          <div class="kpi-details">
+            <span class="kpi-title">Total Revenue</span>
+            <span class="kpi-value" id="kpiRevenue">Rs. 0</span>
+            <span class="kpi-sub">From Completed Cash Pickups</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-blue">📦</div>
+          <div class="kpi-details">
+            <span class="kpi-title">Total Orders</span>
+            <span class="kpi-value" id="kpiOrders">0</span>
+            <span class="kpi-sub" id="kpiOrdersSub">0 Completed</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-amber">⚠️</div>
+          <div class="kpi-details">
+            <span class="kpi-title">Low Stock Items</span>
+            <span class="kpi-value" id="kpiLowStock">0</span>
+            <span class="kpi-sub">Requires Reorder</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon icon-purple">👥</div>
+          <div class="kpi-details">
+            <span class="kpi-title">Registered Users</span>
+            <span class="kpi-value" id="kpiUsers">0</span>
+            <span class="kpi-sub">Customers & Staff</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics & Management Sections -->
+      <div class="admin-grid">
+        <!-- Sales Revenue Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>📈 Sales Performance Chart</h3>
+            <span class="tag">Real-time Data</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="salesChart" width="600" height="260"></canvas>
+          </div>
+        </div>
+
+        <!-- Management Shortcuts -->
+        <div class="card shortcuts-card">
+          <div class="card-header">
+            <h3>🛠️ Management Controls</h3>
+          </div>
+          <div class="shortcuts-list">
+            <button class="shortcut-btn" id="openManageStaffBtn">
+              <span class="shortcut-icon">👨‍💼</span>
+              <div>
+                <strong>Staff Management</strong>
+                <p>Add staff accounts & permissions</p>
+              </div>
+            </button>
+            <button class="shortcut-btn" id="openManageCatBtn">
+              <span class="shortcut-icon">🏷️</span>
+              <div>
+                <strong>Category Manager</strong>
+                <p>Create & edit grocery categories</p>
+              </div>
+            </button>
+            <button class="shortcut-btn" id="openUserListBtn">
+              <span class="shortcut-icon">👥</span>
+              <div>
+                <strong>Customer Directory</strong>
+                <p>View registered customer details</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ========================================== -->
+  <!-- MODALS & DRAWERS                           -->
+  <!-- ========================================== -->
+
+  <!-- Shopping Cart Side Drawer -->
+  <div class="drawer-overlay hidden" id="cartDrawerOverlay">
+    <div class="drawer">
+      <div class="drawer-header">
+        <h3>🛒 Your Shopping Cart</h3>
+        <button class="close-btn" id="closeCartBtn">&times;</button>
+      </div>
+
+      <div class="drawer-body" id="cartItemsList">
+        <div class="empty-state">
+          <span class="empty-icon">🛒</span>
+          <p>Your cart is empty. Add fresh items from the shop!</p>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <div class="summary-line">
+          <span>Subtotal:</span>
+          <strong id="cartSubtotal">Rs. 0</strong>
+        </div>
+        <div class="summary-line highlight-line">
+          <span>Payment Method:</span>
+          <span class="pay-tag">💵 Cash on Pickup</span>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" id="checkoutBtn" disabled>
+          Proceed to Checkout ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay hidden" id="checkoutModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🛍️ Place Order (Cash on Pickup)</h3>
+        <button class="close-btn" id="closeCheckoutBtn">&times;</button>
+      </div>
+      <form id="checkoutForm" class="modal-body">
+        <div class="info-alert">
+          💡 You will pay cash when you pick up your items at the grocery shop. We will notify you when your order is ready!
+        </div>
+
+        <div class="form-group">
+          <label>Your Full Name *</label>
+          <input type="text" id="custNameInput" required placeholder="e.g., Kasun Perera">
+        </div>
+
+        <div class="form-group">
+          <label>Mobile Phone Number *</label>
+          <input type="tel" id="custPhoneInput" required placeholder="e.g., 077 123 4567">
+        </div>
+
+        <div class="form-group">
+          <label>Special Instructions / Notes (Optional)</label>
+          <textarea id="custNotesInput" placeholder="e.g. Please pack ripe bananas carefully..."></textarea>
+        </div>
+
+        <div class="order-summary-box">
+          <h4>Order Breakdown:</h4>
+          <div id="checkoutSummaryItems"></div>
+          <div class="summary-total-line">
+            <span>Total Payable at Pickup:</span>
+            <strong id="checkoutTotalAmount">Rs. 0</strong>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelCheckoutBtn">Cancel</button>
+          <button type="submit" class="btn btn-success btn-lg">Confirm & Place Order 💵</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Customer Orders & Live Status Modal -->
+  <div class="modal-overlay hidden" id="ordersModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3>📋 My Orders & Live Pickup Tracker</h3>
+        <button class="close-btn" id="closeOrdersModalBtn">&times;</button>
+      </div>
+      <div class="modal-body" id="customerOrdersContainer"></div>
+    </div>
+  </div>
+
+
+  <!-- Staff Add/Edit Product Modal -->
+  <div class="modal-overlay hidden" id="productModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="productModalTitle">➕ Add New Grocery Product</h3>
+        <button class="close-btn" id="closeProductModalBtn">&times;</button>
+      </div>
+      <form id="productForm" class="modal-body">
+        <input type="hidden" id="prodIdInput">
+        
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" id="prodNameInput" required placeholder="e.g., Fresh Organic Apples">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="prodCategorySelect" required></select>
+          </div>
+          <div class="form-group">
+            <label>Unit / Weight *</label>
+            <input type="text" id="prodUnitInput" required placeholder="e.g. 1 kg / 500g / 1 Pack">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Price (LKR) *</label>
+            <input type="number" id="prodPriceInput" required min="1" placeholder="e.g. 450">
+          </div>
+          <div class="form-group">
+            <label>Initial Stock *</label>
+            <input type="number" id="prodStockInput" required min="0" placeholder="e.g. 50">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Emoji Icon / Image Symbol</label>
+          <input type="text" id="prodImageInput" placeholder="e.g. 🍎 or 🥛" value="🍎">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="prodDescInput" placeholder="Brief details about freshness or origin..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelProductBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/customer.js"></script>
+  <script src="js/staff.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

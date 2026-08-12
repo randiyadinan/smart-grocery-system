@@ -2,9 +2,3 @@ node_modules/
 .DS_Store
 *.log
 .vercel
-
-.env
-.env.*
-!.env.example
-
-cat.env
