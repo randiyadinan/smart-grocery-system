@@ -225,34 +225,56 @@ const CustomerPortal = {
     Utils.showToast(`Added "${product.name}" to cart!`, 'success');
   },
 
-  updateCartQuantity(productId, change) {
-  const item = this.cart.find(i => String(i.id) === String(productId));
+  async updateCartQuantity(productId, change) {
+  const item = this.cart.find(
+    i => String(i.id) === String(productId)
+  );
 
   if (!item) {
     console.error('Cart item not found:', productId);
     return;
   }
 
-  const newQuantity = Number(item.quantity) + Number(change);
+  // Get latest stock from server
+  const res = await API.getProducts();
+  const products = res ? res.products : [];
+
+  const product = products.find(
+    p => String(p.id) === String(productId)
+  );
+
+  if (!product) {
+    Utils.showToast('Product not found', 'error');
+    return;
+  }
+
+  const currentQuantity = Number(item.quantity);
+  const newQuantity = currentQuantity + Number(change);
+  const availableStock = Number(product.stock);
+
+  // Do not allow quantity above available stock
+  if (newQuantity > availableStock) {
+    Utils.showToast(
+      `Only ${availableStock} items available in stock`,
+      'warning'
+    );
+    return;
+  }
 
   // Remove item when quantity reaches 0
   if (newQuantity <= 0) {
     this.cart = this.cart.filter(
       i => String(i.id) !== String(productId)
     );
-  }
-  // Do not allow quantity above available stock
-  else if (newQuantity > Number(item.stock)) {
-    Utils.showToast(`Only ${item.stock} items available in stock.`, 'warning');
-    return;
-  }
-  else {
+  } else {
     item.quantity = newQuantity;
-    item.subtotal = Number(item.quantity) * Number(item.price);
+    item.subtotal = newQuantity * Number(item.price);
   }
 
   this.updateCartUI();
 },
+
+  
   updateCartUI() {
     const cartCount = document.getElementById('cartCount');
     const cartItemsList = document.getElementById('cartItemsList');
