@@ -15,11 +15,19 @@ async function query(text, params) {
   return pool.query(text, params);
 }
 
-// ==================== USERS ====================
+
+// ==================================================
+// USERS
+// ==================================================
 
 async function getUsers() {
   const result = await query(`
-    SELECT id, name, email, role, created_at
+    SELECT
+      id,
+      name,
+      email,
+      role,
+      created_at
     FROM users
     ORDER BY id DESC
   `);
@@ -27,10 +35,15 @@ async function getUsers() {
   return result.rows;
 }
 
+
 async function registerUser(user) {
   try {
     const existing = await query(
-      'SELECT id FROM users WHERE email = $1',
+      `
+      SELECT id
+      FROM users
+      WHERE LOWER(email) = LOWER($1)
+      `,
       [user.email]
     );
 
@@ -41,12 +54,27 @@ async function registerUser(user) {
       };
     }
 
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const hashedPassword = await bcrypt.hash(
+      user.password,
+      10
+    );
 
     const result = await query(`
-      INSERT INTO users (name, email, password, role)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, name, email, role, created_at
+      INSERT INTO users
+        (
+          name,
+          email,
+          password,
+          role
+        )
+      VALUES
+        ($1, $2, $3, $4)
+      RETURNING
+        id,
+        name,
+        email,
+        role,
+        created_at
     `, [
       user.name,
       user.email,
@@ -60,7 +88,11 @@ async function registerUser(user) {
     };
 
   } catch (error) {
-    console.error('Register error:', error);
+    console.error(
+      'Register error:',
+      error
+    );
+
     return {
       success: false,
       message: 'Registration failed'
@@ -68,18 +100,31 @@ async function registerUser(user) {
   }
 }
 
+
 async function authenticate(email, password, role) {
   try {
     let result;
 
     if (role) {
       result = await query(
-        'SELECT * FROM users WHERE email = $1 AND role = $2',
-        [email, role]
+        `
+        SELECT *
+        FROM users
+        WHERE LOWER(email) = LOWER($1)
+          AND LOWER(role) = LOWER($2)
+        `,
+        [
+          email,
+          role
+        ]
       );
     } else {
       result = await query(
-        'SELECT * FROM users WHERE email = $1',
+        `
+        SELECT *
+        FROM users
+        WHERE LOWER(email) = LOWER($1)
+        `,
         [email]
       );
     }
@@ -93,10 +138,18 @@ async function authenticate(email, password, role) {
 
     const user = result.rows[0];
 
-    const passwordMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    if (!user.password) {
+      return {
+        success: false,
+        message: 'Invalid email or password'
+      };
+    }
+
+    const passwordMatch =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
 
     if (!passwordMatch) {
       return {
@@ -116,7 +169,10 @@ async function authenticate(email, password, role) {
     };
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error(
+      'Login error:',
+      error
+    );
 
     return {
       success: false,
@@ -125,16 +181,28 @@ async function authenticate(email, password, role) {
   }
 }
 
+
 async function deleteUser(id) {
   const result = await query(
-    'DELETE FROM users WHERE id = $1 RETURNING id, name, email, role',
+    `
+    DELETE FROM users
+    WHERE id = $1
+    RETURNING
+      id,
+      name,
+      email,
+      role
+    `,
     [id]
   );
 
   return result.rows[0] || null;
 }
 
-// ==================== CATEGORIES ====================
+
+// ==================================================
+// CATEGORIES
+// ==================================================
 
 async function getCategories() {
   const result = await query(`
@@ -146,26 +214,39 @@ async function getCategories() {
   return result.rows;
 }
 
+
 async function addCategory(category) {
   const result = await query(`
-    INSERT INTO categories (name)
-    VALUES ($1)
+    INSERT INTO categories
+      (name)
+    VALUES
+      ($1)
     RETURNING *
-  `, [category.name]);
+  `, [
+    category.name
+  ]);
 
   return result.rows[0];
 }
 
+
 async function deleteCategory(id) {
   const result = await query(
-    'DELETE FROM categories WHERE id = $1 RETURNING *',
+    `
+    DELETE FROM categories
+    WHERE id = $1
+    RETURNING *
+    `,
     [id]
   );
 
   return result.rows[0] || null;
 }
 
-// ==================== PRODUCTS ====================
+
+// ==================================================
+// PRODUCTS
+// ==================================================
 
 async function getProducts() {
   const result = await query(`
@@ -187,12 +268,27 @@ async function getProducts() {
   return result.rows;
 }
 
+
 async function addProduct(product) {
   const result = await query(`
     INSERT INTO products
-      (name, description, price, stock, category_id, image)
+      (
+        name,
+        description,
+        price,
+        stock,
+        category_id,
+        image
+      )
     VALUES
-      ($1, $2, $3, $4, $5, $6)
+      (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6
+      )
     RETURNING *
   `, [
     product.name,
@@ -205,6 +301,7 @@ async function addProduct(product) {
 
   return result.rows[0];
 }
+
 
 async function updateProduct(id, product) {
   const result = await query(`
@@ -231,16 +328,24 @@ async function updateProduct(id, product) {
   return result.rows[0] || null;
 }
 
+
 async function deleteProduct(id) {
   const result = await query(
-    'DELETE FROM products WHERE id = $1 RETURNING *',
+    `
+    DELETE FROM products
+    WHERE id = $1
+    RETURNING *
+    `,
     [id]
   );
 
   return result.rows[0] || null;
 }
 
-// ==================== ORDERS ====================
+
+// ==================================================
+// ORDERS
+// ==================================================
 
 async function getOrders() {
   const result = await query(`
@@ -252,6 +357,7 @@ async function getOrders() {
       o.payment_method,
       o.pickup_pin,
       o.created_at,
+
       COALESCE(
         json_agg(
           json_build_object(
@@ -259,16 +365,24 @@ async function getOrders() {
             'quantity', oi.quantity,
             'price', oi.price,
             'name', p.name,
-            'subtotal', (oi.quantity * oi.price)
+            'subtotal',
+              (oi.quantity * oi.price)
           )
-        ) FILTER (WHERE oi.id IS NOT NULL),
+        )
+        FILTER (
+          WHERE oi.id IS NOT NULL
+        ),
         '[]'::json
       ) AS items
+
     FROM orders o
+
     LEFT JOIN order_items oi
       ON oi.order_id = o.id
+
     LEFT JOIN products p
       ON p.id = oi.product_id
+
     GROUP BY
       o.id,
       o.user_id,
@@ -277,16 +391,27 @@ async function getOrders() {
       o.payment_method,
       o.pickup_pin,
       o.created_at
+
     ORDER BY o.id DESC
   `);
 
   return result.rows.map(order => ({
     ...order,
-    timestamp: order.created_at,
-    totalAmount: Number(order.total || 0),
-    paymentMethod: order.payment_method,
-    pickupPin: order.pickup_pin,
-    items: order.items || []
+
+    timestamp:
+      order.created_at,
+
+    totalAmount:
+      Number(order.total || 0),
+
+    paymentMethod:
+      order.payment_method,
+
+    pickupPin:
+      order.pickup_pin,
+
+    items:
+      order.items || []
   }));
 }
 
@@ -308,45 +433,26 @@ async function createOrder(order) {
       order.user_id ||
       null;
 
-    const items = Array.isArray(order.items) ? order.items : [];
+    const items =
+      Array.isArray(order.items)
+        ? order.items
+        : [];
 
-    // Calculate the total from the order items.
-    const totalAmount = items.reduce((sum, item) => {
-      const quantity = Number(
-        item.quantity ?? item.qty ?? 1
+    if (items.length === 0) {
+      throw new Error(
+        'Cart items required'
       );
+    }
 
-      const price = Number(
-        item.price ??
-        item.unitPrice ??
-        item.unit_price ??
-        0
-      );
 
-      return sum + (quantity * price);
-    }, 0);
+    // ----------------------------------------------
+    // Verify products
+    // ----------------------------------------------
 
-    const pickupPin = String(
-      Math.floor(1000 + Math.random() * 9000)
-    );
-
-    const orderResult = await client.query(`
-      INSERT INTO orders
-        (user_id, total, status, payment_method, pickup_pin)
-      VALUES
-        ($1, $2, $3, $4, $5)
-      RETURNING *
-    `, [
-      userId,
-      totalAmount,
-      'pending',
-      paymentMethod,
-      pickupPin
-    ]);
-
-    const newOrder = orderResult.rows[0];
+    const verifiedItems = [];
 
     for (const item of items) {
+
       const productId =
         item.productId ??
         item.product_id ??
@@ -355,48 +461,242 @@ async function createOrder(order) {
         null;
 
       const quantity = Number(
-        item.quantity ?? item.qty ?? 1
-      );
-
-      const price = Number(
-        item.price ??
-        item.unitPrice ??
-        item.unit_price ??
-        0
+        item.quantity ??
+        item.qty ??
+        1
       );
 
       if (!productId) {
         throw new Error(
-          `Invalid product ID in order item: ${JSON.stringify(item)}`
+          'Invalid product ID'
         );
       }
 
-      await client.query(`
-        INSERT INTO order_items
-          (order_id, product_id, quantity, price)
-        VALUES
-          ($1, $2, $3, $4)
-      `, [
-        newOrder.id,
-        productId,
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+      ) {
+        throw new Error(
+          `Invalid quantity for product ${productId}`
+        );
+      }
+
+
+      // Lock product row
+      const productResult =
+        await client.query(
+          `
+          SELECT
+            id,
+            name,
+            price,
+            stock
+          FROM products
+          WHERE id = $1
+          FOR UPDATE
+          `,
+          [productId]
+        );
+
+
+      if (
+        productResult.rows.length === 0
+      ) {
+        throw new Error(
+          `Product ${productId} not found`
+        );
+      }
+
+
+      const product =
+        productResult.rows[0];
+
+
+      // Check stock
+      if (
+        Number(product.stock) < quantity
+      ) {
+        throw new Error(
+          `Not enough stock for ${product.name}. Available: ${product.stock}`
+        );
+      }
+
+
+      const price =
+        Number(product.price);
+
+
+      verifiedItems.push({
+        productId:
+          product.id,
+
+        name:
+          product.name,
+
         quantity,
+
         price
-      ]);
+      });
     }
 
-    await client.query('COMMIT');
+
+    // ----------------------------------------------
+    // Calculate total
+    // ----------------------------------------------
+
+    const totalAmount =
+      verifiedItems.reduce(
+        (sum, item) => {
+          return sum +
+            (
+              item.quantity *
+              item.price
+            );
+        },
+        0
+      );
+
+
+    // ----------------------------------------------
+    // Generate pickup PIN
+    // ----------------------------------------------
+
+    const pickupPin =
+      String(
+        Math.floor(
+          1000 +
+          Math.random() * 9000
+        )
+      );
+
+
+    // ----------------------------------------------
+    // Create order
+    // ----------------------------------------------
+
+    const orderResult =
+      await client.query(
+        `
+        INSERT INTO orders
+          (
+            user_id,
+            total,
+            status,
+            payment_method,
+            pickup_pin
+          )
+        VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5
+          )
+        RETURNING *
+        `,
+        [
+          userId,
+          totalAmount,
+          'Pending',
+          paymentMethod,
+          pickupPin
+        ]
+      );
+
+
+    const newOrder =
+      orderResult.rows[0];
+
+
+    // ----------------------------------------------
+    // Insert items + reduce stock
+    // ----------------------------------------------
+
+    for (const item of verifiedItems) {
+
+      await client.query(
+        `
+        INSERT INTO order_items
+          (
+            order_id,
+            product_id,
+            quantity,
+            price
+          )
+        VALUES
+          (
+            $1,
+            $2,
+            $3,
+            $4
+          )
+        `,
+        [
+          newOrder.id,
+          item.productId,
+          item.quantity,
+          item.price
+        ]
+      );
+
+
+      const stockResult =
+        await client.query(
+          `
+          UPDATE products
+          SET stock =
+            stock - $1
+
+          WHERE id = $2
+            AND stock >= $1
+
+          RETURNING
+            id,
+            stock
+          `,
+          [
+            item.quantity,
+            item.productId
+          ]
+        );
+
+
+      if (
+        stockResult.rows.length === 0
+      ) {
+        throw new Error(
+          `Stock update failed for product ${item.name}`
+        );
+      }
+    }
+
+
+    // ----------------------------------------------
+    // Commit
+    // ----------------------------------------------
+
+    await client.query(
+      'COMMIT'
+    );
+
 
     return {
       ...newOrder,
-      timestamp: newOrder.created_at,
-      totalAmount: Number(newOrder.total || 0),
-      paymentMethod: newOrder.payment_method,
-      pickupPin: newOrder.pickup_pin
+      items: verifiedItems
     };
 
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Create order error:', error);
+
+    await client.query(
+      'ROLLBACK'
+    );
+
+    console.error(
+      'Create order error:',
+      error
+    );
+
     throw error;
 
   } finally {
@@ -404,18 +704,28 @@ async function createOrder(order) {
   }
 }
 
-async function updateOrderStatus(id, status) {
+
+async function updateOrderStatus(
+  id,
+  status
+) {
   const result = await query(`
     UPDATE orders
     SET status = $1
     WHERE id = $2
     RETURNING *
-  `, [status, id]);
+  `, [
+    status,
+    id
+  ]);
 
   return result.rows[0] || null;
 }
 
-// ==================== NOTIFICATIONS ====================
+
+// ==================================================
+// NOTIFICATIONS
+// ==================================================
 
 async function getNotifications(userId) {
   const result = await query(`
@@ -423,109 +733,298 @@ async function getNotifications(userId) {
     FROM notifications
     WHERE user_id = $1
     ORDER BY id DESC
-  `, [userId]);
+  `, [
+    userId
+  ]);
 
   return result.rows;
 }
 
-async function markNotificationsRead(userId) {
+
+async function markNotificationsRead(
+  userId
+) {
   await query(`
     UPDATE notifications
     SET is_read = true
     WHERE user_id = $1
-  `, [userId]);
+  `, [
+    userId
+  ]);
 }
 
-// ==================== ADMIN ====================
+
+// ==================================================
+// ADMIN ANALYTICS
+// ==================================================
+
 async function getAdminStats() {
-  const users = await query(
-    'SELECT COUNT(*) FROM users'
-  );
+  try {
 
-  const products = await query(
-    'SELECT COUNT(*) FROM products'
-  );
+    // ----------------------------------------------
+    // Total users
+    // ----------------------------------------------
 
-  const orders = await query(
-    'SELECT COUNT(*) FROM orders'
-  );
+    const users = await query(`
+      SELECT
+        COUNT(*)::int AS count
+      FROM users
+    `);
 
-  const completedOrders = await query(`
-    SELECT COUNT(*) FROM orders
-    WHERE LOWER(status) = 'completed'
-  `);
 
-  const pendingOrders = await query(`
-    SELECT COUNT(*) FROM orders
-    WHERE LOWER(status) IN (
-      'pending',
-      'preparing',
-      'ready for pickup'
-    )
-  `);
+    // ----------------------------------------------
+    // Total customers
+    // ----------------------------------------------
 
-  const lowStock = await query(`
-    SELECT COUNT(*) FROM products
-    WHERE stock <= 5
-  `);
+    const customers = await query(`
+      SELECT
+        COUNT(*)::int AS count
+      FROM users
+      WHERE LOWER(role) = 'customer'
+    `);
 
-  const revenue = await query(`
-    SELECT COALESCE(SUM(total), 0) AS total
-    FROM orders
-    WHERE LOWER(status) = 'completed'
-  `);
 
-  const activeCustomers = await query(`
-    SELECT COUNT(*) FROM users
-    WHERE LOWER(role) = 'customer'
-  `);
+    // ----------------------------------------------
+    // Total products
+    // ----------------------------------------------
 
-  const salesByDay = await query(`
-    SELECT
-      TO_CHAR(created_at, 'Dy') AS day,
-      COALESCE(SUM(total), 0) AS revenue
-    FROM orders
-    WHERE LOWER(status) = 'completed'
-      AND created_at >= CURRENT_DATE - INTERVAL '6 days'
-    GROUP BY TO_CHAR(created_at, 'Dy'), DATE(created_at)
-    ORDER BY DATE(created_at)
-  `);
+    const products = await query(`
+      SELECT
+        COUNT(*)::int AS count
+      FROM products
+    `);
 
-  return {
-    users: Number(users.rows[0].count),
-    products: Number(products.rows[0].count),
 
-    orders: Number(orders.rows[0].count),
-    totalOrders: Number(orders.rows[0].count),
+    // ----------------------------------------------
+    // Total orders
+    // ----------------------------------------------
 
-    completedOrders: Number(
-      completedOrders.rows[0].count
-    ),
+    const orders = await query(`
+      SELECT
+        COUNT(*)::int AS count
+      FROM orders
+    `);
 
-    pendingOrdersCount: Number(
-      pendingOrders.rows[0].count
-    ),
 
-    lowStockCount: Number(
-      lowStock.rows[0].count
-    ),
+    // ----------------------------------------------
+    // Completed orders
+    // ----------------------------------------------
 
-    activeCustomers: Number(
-      activeCustomers.rows[0].count
-    ),
+    const completedOrders =
+      await query(`
+        SELECT
+          COUNT(*)::int AS count
+        FROM orders
+        WHERE LOWER(status) = 'completed'
+      `);
 
-    totalRevenue: Number(
-      revenue.rows[0].total
-    ),
 
-    salesByDay: salesByDay.rows.map(row => ({
-      day: row.day,
-      revenue: Number(row.revenue)
-    }))
-  };
+    // ----------------------------------------------
+    // Pending / active orders
+    // ----------------------------------------------
+
+    const pendingOrders =
+      await query(`
+        SELECT
+          COUNT(*)::int AS count
+        FROM orders
+
+        WHERE LOWER(status) IN (
+          'pending',
+          'preparing',
+          'ready for pickup'
+        )
+      `);
+
+
+    // ----------------------------------------------
+    // REQUIRES REORDER
+    //
+    // Any product with stock <= 5
+    // is considered low stock.
+    // ----------------------------------------------
+
+    const lowStock =
+      await query(`
+        SELECT
+          COUNT(*)::int AS count
+        FROM products
+        WHERE COALESCE(stock, 0) <= 5
+      `);
+
+
+    // ----------------------------------------------
+    // Total completed revenue
+    // ----------------------------------------------
+
+    const revenue =
+      await query(`
+        SELECT
+          COALESCE(
+            SUM(total),
+            0
+          )::numeric AS total
+
+        FROM orders
+
+        WHERE LOWER(status) =
+          'completed'
+      `);
+
+
+    // ----------------------------------------------
+    // Last 7 days sales
+    // ----------------------------------------------
+
+    const salesByDay =
+      await query(`
+        SELECT
+
+          DATE(created_at)
+            AS date,
+
+          TO_CHAR(
+            created_at,
+            'Dy'
+          ) AS day,
+
+          COALESCE(
+            SUM(total),
+            0
+          )::numeric AS revenue,
+
+          COUNT(*)::int
+            AS orders
+
+        FROM orders
+
+        WHERE LOWER(status) =
+          'completed'
+
+          AND created_at >=
+            CURRENT_DATE -
+            INTERVAL '6 days'
+
+        GROUP BY
+          DATE(created_at),
+          TO_CHAR(
+            created_at,
+            'Dy'
+          )
+
+        ORDER BY
+          DATE(created_at)
+      `);
+
+
+    // ----------------------------------------------
+    // Final response
+    // ----------------------------------------------
+
+    return {
+
+      users:
+        Number(
+          users.rows[0].count
+        ),
+
+      customers:
+        Number(
+          customers.rows[0].count
+        ),
+
+      products:
+        Number(
+          products.rows[0].count
+        ),
+
+      orders:
+        Number(
+          orders.rows[0].count
+        ),
+
+      totalOrders:
+        Number(
+          orders.rows[0].count
+        ),
+
+      completedOrders:
+        Number(
+          completedOrders
+            .rows[0]
+            .count
+        ),
+
+      pendingOrders:
+        Number(
+          pendingOrders
+            .rows[0]
+            .count
+        ),
+
+      lowStockCount:
+        Number(
+          lowStock
+            .rows[0]
+            .count
+        ),
+
+      totalRevenue:
+        Number(
+          revenue
+            .rows[0]
+            .total
+        ),
+
+      revenue:
+        Number(
+          revenue
+            .rows[0]
+            .total
+        ),
+
+      salesByDay:
+        salesByDay.rows.map(
+          row => ({
+            date:
+              row.date,
+
+            day:
+              row.day,
+
+            revenue:
+              Number(
+                row.revenue
+              ),
+
+            orders:
+              Number(
+                row.orders
+              )
+          })
+        )
+    };
+
+  } catch (error) {
+
+    console.error(
+      'Admin analytics error:',
+      error
+    );
+
+    throw error;
+  }
 }
+
+
+// ==================================================
+// EXPORTS
+// ==================================================
+
 module.exports = {
+
   pool,
+
   query,
 
   getUsers,

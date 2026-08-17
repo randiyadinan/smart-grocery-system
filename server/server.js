@@ -44,8 +44,10 @@ function sendJSON(res, data, statusCode = 200) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Access-Control-Allow-Methods':
+      'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization'
   });
 
   res.end(JSON.stringify(data));
@@ -60,87 +62,160 @@ const server = http.createServer(async (req, res) => {
   const pathname = urlObj.pathname;
   const method = req.method;
 
+  // ==================== CORS ====================
+
   if (method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Methods':
+        'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers':
+        'Content-Type, Authorization'
     });
+
     return res.end();
   }
 
-  console.log(`[${new Date().toLocaleTimeString()}] ${method} ${pathname}`);
+  console.log(
+    `[${new Date().toLocaleTimeString()}] ${method} ${pathname}`
+  );
 
   try {
 
-    // ==================== AUTH LOGIN ====================
+    // ==================================================
+    // AUTH LOGIN
+    // ==================================================
 
-    if (pathname === '/api/auth/login' && method === 'POST') {
-      const body = await parseRequestBody(req);
+    if (
+      pathname === '/api/auth/login' &&
+      method === 'POST'
+    ) {
+      try {
+        const body = await parseRequestBody(req);
 
-      if (!body.email || !body.password) {
+        console.log('Login request:', {
+          email: body.email,
+          role: body.role
+        });
+
+        if (!body.email || !body.password) {
+          return sendJSON(res, {
+            success: false,
+            message: 'Email and password are required'
+          }, 400);
+        }
+
+        const result = await db.authenticate(
+          body.email,
+          body.password,
+          body.role || 'customer'
+        );
+
+        if (!result.success) {
+          return sendJSON(res, result, 401);
+        }
+
+        return sendJSON(res, result, 200);
+
+      } catch (error) {
+        console.error(
+          'POST /api/auth/login error:',
+          error
+        );
+
         return sendJSON(res, {
           success: false,
-          message: 'Email and password are required'
-        }, 400);
+          message: error.message || 'Login failed'
+        }, 500);
       }
-
-      const result = await db.authenticate(
-        body.email,
-        body.password,
-        body.role
-      );
-
-      if (!result.success) {
-        return sendJSON(res, result, 401);
-      }
-
-      return sendJSON(res, result);
     }
 
-    // ==================== AUTH REGISTER ====================
+    // ==================================================
+    // AUTH REGISTER
+    // ==================================================
 
-    if (pathname === '/api/auth/register' && method === 'POST') {
-      const body = await parseRequestBody(req);
+    if (
+      pathname === '/api/auth/register' &&
+      method === 'POST'
+    ) {
+      try {
+        const body = await parseRequestBody(req);
 
-      if (!body.name || !body.email || !body.password) {
+        if (
+          !body.name ||
+          !body.email ||
+          !body.password
+        ) {
+          return sendJSON(res, {
+            success: false,
+            message:
+              'Name, email, and password are required'
+          }, 400);
+        }
+
+        const result =
+          await db.registerUser(body);
+
+        if (!result.success) {
+          return sendJSON(res, result, 400);
+        }
+
+        return sendJSON(res, result, 201);
+
+      } catch (error) {
+        console.error(
+          'POST /api/auth/register error:',
+          error
+        );
+
         return sendJSON(res, {
           success: false,
-          message: 'Name, email, and password are required'
-        }, 400);
+          message:
+            error.message || 'Registration failed'
+        }, 500);
       }
-
-      const result = await db.registerUser(body);
-
-      if (!result.success) {
-        return sendJSON(res, result, 400);
-      }
-
-      return sendJSON(res, result, 201);
     }
 
-    // ==================== PRODUCTS GET ====================
+    // ==================================================
+    // PRODUCTS GET
+    // ==================================================
 
-    if (pathname === '/api/products' && method === 'GET') {
-      const category = urlObj.searchParams.get('category');
-      const search = urlObj.searchParams.get('search');
+    if (
+      pathname === '/api/products' &&
+      method === 'GET'
+    ) {
+      const category =
+        urlObj.searchParams.get('category');
 
-      let products = await db.getProducts();
+      const search =
+        urlObj.searchParams.get('search');
 
-      if (category && category !== 'all') {
+      let products =
+        await db.getProducts();
+
+      if (
+        category &&
+        category !== 'all'
+      ) {
         products = products.filter(product =>
-          String(product.category || '').toLowerCase() ===
+          String(product.category || '')
+            .toLowerCase() ===
           category.toLowerCase()
         );
       }
 
       if (search) {
-        const query = search.toLowerCase();
+        const query =
+          search.toLowerCase();
 
         products = products.filter(product => {
-          const name = String(product.name || '').toLowerCase();
+          const name =
+            String(product.name || '')
+              .toLowerCase();
+
           const description =
-            String(product.description || '').toLowerCase();
+            String(product.description || '')
+              .toLowerCase();
 
           return (
             name.includes(query) ||
@@ -155,10 +230,16 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== PRODUCTS POST ====================
+    // ==================================================
+    // PRODUCTS POST
+    // ==================================================
 
-    if (pathname === '/api/products' && method === 'POST') {
-      const body = await parseRequestBody(req);
+    if (
+      pathname === '/api/products' &&
+      method === 'POST'
+    ) {
+      const body =
+        await parseRequestBody(req);
 
       if (
         !body.name ||
@@ -167,11 +248,13 @@ const server = http.createServer(async (req, res) => {
       ) {
         return sendJSON(res, {
           success: false,
-          message: 'Name, price and stock are required'
+          message:
+            'Name, price and stock are required'
         }, 400);
       }
 
-      const product = await db.addProduct(body);
+      const product =
+        await db.addProduct(body);
 
       return sendJSON(res, {
         success: true,
@@ -179,16 +262,22 @@ const server = http.createServer(async (req, res) => {
       }, 201);
     }
 
-    // ==================== PRODUCTS PUT ====================
+    // ==================================================
+    // PRODUCTS PUT
+    // ==================================================
 
     if (
       pathname.startsWith('/api/products/') &&
       method === 'PUT'
     ) {
-      const id = pathname.replace('/api/products/', '');
-      const body = await parseRequestBody(req);
+      const id =
+        pathname.replace('/api/products/', '');
 
-      const product = await db.updateProduct(id, body);
+      const body =
+        await parseRequestBody(req);
+
+      const product =
+        await db.updateProduct(id, body);
 
       if (!product) {
         return sendJSON(res, {
@@ -203,15 +292,19 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== PRODUCTS DELETE ====================
+    // ==================================================
+    // PRODUCTS DELETE
+    // ==================================================
 
     if (
       pathname.startsWith('/api/products/') &&
       method === 'DELETE'
     ) {
-      const id = pathname.replace('/api/products/', '');
+      const id =
+        pathname.replace('/api/products/', '');
 
-      const product = await db.deleteProduct(id);
+      const product =
+        await db.deleteProduct(id);
 
       if (!product) {
         return sendJSON(res, {
@@ -227,13 +320,16 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== CATEGORIES GET ====================
+    // ==================================================
+    // CATEGORIES GET
+    // ==================================================
 
     if (
       pathname === '/api/categories' &&
       method === 'GET'
     ) {
-      const categories = await db.getCategories();
+      const categories =
+        await db.getCategories();
 
       return sendJSON(res, {
         success: true,
@@ -241,13 +337,16 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== CATEGORIES POST ====================
+    // ==================================================
+    // CATEGORIES POST
+    // ==================================================
 
     if (
       pathname === '/api/categories' &&
       method === 'POST'
     ) {
-      const body = await parseRequestBody(req);
+      const body =
+        await parseRequestBody(req);
 
       if (!body.name) {
         return sendJSON(res, {
@@ -256,7 +355,8 @@ const server = http.createServer(async (req, res) => {
         }, 400);
       }
 
-      const category = await db.addCategory(body);
+      const category =
+        await db.addCategory(body);
 
       return sendJSON(res, {
         success: true,
@@ -264,15 +364,19 @@ const server = http.createServer(async (req, res) => {
       }, 201);
     }
 
-    // ==================== CATEGORIES DELETE ====================
+    // ==================================================
+    // CATEGORIES DELETE
+    // ==================================================
 
     if (
       pathname.startsWith('/api/categories/') &&
       method === 'DELETE'
     ) {
-      const id = pathname.replace('/api/categories/', '');
+      const id =
+        pathname.replace('/api/categories/', '');
 
-      const category = await db.deleteCategory(id);
+      const category =
+        await db.deleteCategory(id);
 
       if (!category) {
         return sendJSON(res, {
@@ -287,17 +391,24 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== ORDERS GET ====================
+    // ==================================================
+    // ORDERS GET
+    // ==================================================
 
-    if (pathname === '/api/orders' && method === 'GET') {
+    if (
+      pathname === '/api/orders' &&
+      method === 'GET'
+    ) {
       const customerId =
         urlObj.searchParams.get('customerId');
 
-      let orders = await db.getOrders();
+      let orders =
+        await db.getOrders();
 
       if (customerId) {
         orders = orders.filter(order =>
-          String(order.user_id) === String(customerId)
+          String(order.user_id) ===
+          String(customerId)
         );
       }
 
@@ -307,38 +418,69 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== ORDERS POST ====================
-
-    if (pathname === '/api/orders' && method === 'POST') {
-      const body = await parseRequestBody(req);
-
-      if (
-        !body.items ||
-        !Array.isArray(body.items) ||
-        body.items.length === 0
-      ) {
-        return sendJSON(res, {
-          success: false,
-          message: 'Cart items required'
-        }, 400);
-      }
-
-      const order = await db.createOrder(body);
-
-      return sendJSON(res, {
-        success: true,
-        order
-      }, 201);
-    }
-
-    // ==================== ORDER STATUS ====================
+    // ==================================================
+    // ORDERS POST
+    // ==================================================
 
     if (
-      pathname.match(/^\/api\/orders\/[^\/]+\/status$/) &&
+      pathname === '/api/orders' &&
+      method === 'POST'
+    ) {
+      try {
+        const body =
+          await parseRequestBody(req);
+
+        if (
+          !body.items ||
+          !Array.isArray(body.items) ||
+          body.items.length === 0
+        ) {
+          return sendJSON(res, {
+            success: false,
+            message: 'Cart items required'
+          }, 400);
+        }
+
+        const order =
+          await db.createOrder(body);
+
+        return sendJSON(res, {
+          success: true,
+          message:
+            'Order placed successfully',
+          order
+        }, 201);
+
+      } catch (error) {
+        console.error(
+          'POST /api/orders error:',
+          error
+        );
+
+        return sendJSON(res, {
+          success: false,
+          message:
+            error.message ||
+            'Failed to place order'
+        }, 400);
+      }
+    }
+
+    // ==================================================
+    // ORDER STATUS
+    // ==================================================
+
+    if (
+      pathname.match(
+        /^\/api\/orders\/[^\/]+\/status$/
+      ) &&
       method === 'PATCH'
     ) {
-      const orderId = pathname.split('/')[3];
-      const body = await parseRequestBody(req);
+      const orderId =
+        pathname.split('/')[3];
+
+      const body =
+        await parseRequestBody(req);
 
       if (!body.status) {
         return sendJSON(res, {
@@ -348,7 +490,10 @@ const server = http.createServer(async (req, res) => {
       }
 
       const order =
-        await db.updateOrderStatus(orderId, body.status);
+        await db.updateOrderStatus(
+          orderId,
+          body.status
+        );
 
       if (!order) {
         return sendJSON(res, {
@@ -363,14 +508,18 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== NOTIFICATIONS ====================
+    // ==================================================
+    // NOTIFICATIONS GET
+    // ==================================================
 
     if (
       pathname === '/api/notifications' &&
       method === 'GET'
     ) {
       const customerId =
-        urlObj.searchParams.get('customerId');
+        urlObj.searchParams.get(
+          'customerId'
+        );
 
       if (!customerId) {
         return sendJSON(res, {
@@ -381,10 +530,14 @@ const server = http.createServer(async (req, res) => {
       }
 
       const notifications =
-        await db.getNotifications(customerId);
+        await db.getNotifications(
+          customerId
+        );
 
       const unreadCount =
-        notifications.filter(n => !n.is_read).length;
+        notifications.filter(
+          n => !n.is_read
+        ).length;
 
       return sendJSON(res, {
         success: true,
@@ -393,13 +546,17 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== NOTIFICATIONS READ ====================
+    // ==================================================
+    // NOTIFICATIONS READ
+    // ==================================================
 
     if (
-      pathname === '/api/notifications/read' &&
+      pathname ===
+        '/api/notifications/read' &&
       method === 'POST'
     ) {
-      const body = await parseRequestBody(req);
+      const body =
+        await parseRequestBody(req);
 
       if (!body.customerId) {
         return sendJSON(res, {
@@ -408,21 +565,27 @@ const server = http.createServer(async (req, res) => {
         }, 400);
       }
 
-      await db.markNotificationsRead(body.customerId);
+      await db.markNotificationsRead(
+        body.customerId
+      );
 
       return sendJSON(res, {
         success: true,
-        message: 'Notifications marked as read'
+        message:
+          'Notifications marked as read'
       });
     }
 
-    // ==================== ADMIN STATS ====================
+    // ==================================================
+    // ADMIN STATS
+    // ==================================================
 
     if (
       pathname === '/api/admin/stats' &&
       method === 'GET'
     ) {
-      const stats = await db.getAdminStats();
+      const stats =
+        await db.getAdminStats();
 
       return sendJSON(res, {
         success: true,
@@ -430,13 +593,16 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== USERS GET ====================
+    // ==================================================
+    // USERS GET
+    // ==================================================
 
     if (
       pathname === '/api/users' &&
       method === 'GET'
     ) {
-      const users = await db.getUsers();
+      const users =
+        await db.getUsers();
 
       return sendJSON(res, {
         success: true,
@@ -444,22 +610,30 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== USERS POST ====================
+    // ==================================================
+    // USERS POST
+    // ==================================================
 
     if (
       pathname === '/api/users' &&
       method === 'POST'
     ) {
-      const body = await parseRequestBody(req);
+      const body =
+        await parseRequestBody(req);
 
-      if (!body.name || !body.email) {
+      if (
+        !body.name ||
+        !body.email
+      ) {
         return sendJSON(res, {
           success: false,
-          message: 'Name and email are required'
+          message:
+            'Name and email are required'
         }, 400);
       }
 
-      const result = await db.registerUser(body);
+      const result =
+        await db.registerUser(body);
 
       if (!result.success) {
         return sendJSON(res, result, 400);
@@ -471,15 +645,19 @@ const server = http.createServer(async (req, res) => {
       }, 201);
     }
 
-    // ==================== USERS DELETE ====================
+    // ==================================================
+    // USERS DELETE
+    // ==================================================
 
     if (
       pathname.startsWith('/api/users/') &&
       method === 'DELETE'
     ) {
-      const id = pathname.replace('/api/users/', '');
+      const id =
+        pathname.replace('/api/users/', '');
 
-      const user = await db.deleteUser(id);
+      const user =
+        await db.deleteUser(id);
 
       if (!user) {
         return sendJSON(res, {
@@ -494,22 +672,32 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // ==================== STATIC FILES ====================
+    // ==================================================
+    // STATIC FILES
+    // ==================================================
 
     let requestedPath =
-      pathname === '/' ? 'index.html' : pathname;
+      pathname === '/'
+        ? 'index.html'
+        : pathname;
 
-    requestedPath = requestedPath.replace(/^\/+/, '');
+    requestedPath =
+      requestedPath.replace(/^\/+/, '');
 
-    const publicRoot = path.resolve(PUBLIC_DIR);
-    const filePath = path.resolve(
-      PUBLIC_DIR,
-      requestedPath
-    );
+    const publicRoot =
+      path.resolve(PUBLIC_DIR);
+
+    const filePath =
+      path.resolve(
+        PUBLIC_DIR,
+        requestedPath
+      );
 
     if (
       filePath !== publicRoot &&
-      !filePath.startsWith(publicRoot + path.sep)
+      !filePath.startsWith(
+        publicRoot + path.sep
+      )
     ) {
       res.writeHead(403);
       return res.end('Forbidden');
@@ -519,7 +707,8 @@ const server = http.createServer(async (req, res) => {
       fs.existsSync(filePath) &&
       fs.statSync(filePath).isFile()
     ) {
-      const ext = path.extname(filePath);
+      const ext =
+        path.extname(filePath);
 
       res.writeHead(200, {
         'Content-Type':
@@ -527,45 +716,75 @@ const server = http.createServer(async (req, res) => {
           'application/octet-stream'
       });
 
-      return fs.createReadStream(filePath).pipe(res);
+      return fs
+        .createReadStream(filePath)
+        .pipe(res);
     }
 
+    // ==================================================
+    // FALLBACK TO INDEX
+    // ==================================================
+
     const indexPath =
-      path.join(PUBLIC_DIR, 'index.html');
+      path.join(
+        PUBLIC_DIR,
+        'index.html'
+      );
 
     if (
       fs.existsSync(indexPath) &&
       fs.statSync(indexPath).isFile()
     ) {
       res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8'
+        'Content-Type':
+          'text/html; charset=utf-8'
       });
 
-      return fs.createReadStream(indexPath).pipe(res);
+      return fs
+        .createReadStream(indexPath)
+        .pipe(res);
     }
 
     res.writeHead(404, {
-      'Content-Type': 'text/plain'
+      'Content-Type':
+        'text/plain'
     });
 
     res.end('404 Not Found');
 
   } catch (error) {
-    console.error('Server error:', error);
+
+    console.error(
+      'Server error:',
+      error
+    );
 
     return sendJSON(res, {
       success: false,
-      message: 'Internal Server Error',
+      message:
+        'Internal Server Error',
       error: error.message
     }, 500);
   }
 });
 
+// ======================================================
+// START SERVER
+// ======================================================
+
 server.listen(PORT, () => {
   console.log('');
-  console.log('==================================================');
-  console.log('🚀 Smart Grocery System Server Running!');
-  console.log(`🌐 URL: http://localhost:${PORT}`);
-  console.log('==================================================');
+  console.log(
+    '=================================================='
+  );
+  console.log(
+    '🚀 Smart Grocery System Server Running!'
+  );
+  console.log(
+    `🌐 URL: http://localhost:${PORT}`
+  );
+  console.log(
+    '=================================================='
+  );
   console.log('');
 });

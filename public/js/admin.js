@@ -4,24 +4,32 @@
 
 const AdminPortal = {
 
+  // =====================================================
+  // INITIALIZE
+  // =====================================================
+
   async init() {
+
     this.bindEvents();
 
     await this.loadStats();
 
-    // Refresh statistics every 4 seconds
     setInterval(() => {
 
-      const adminView = document.getElementById('adminView');
+      const adminView =
+        document.getElementById('adminView');
 
       if (
         adminView &&
         !adminView.classList.contains('hidden')
       ) {
+
         this.loadStats();
+
       }
 
     }, 4000);
+
   },
 
 
@@ -31,6 +39,7 @@ const AdminPortal = {
 
   bindEvents() {
 
+    // Export report
     const exportReportBtn =
       document.getElementById('exportReportBtn');
 
@@ -43,6 +52,7 @@ const AdminPortal = {
     }
 
 
+    // Staff management
     const openManageStaffBtn =
       document.getElementById('openManageStaffBtn');
 
@@ -55,6 +65,7 @@ const AdminPortal = {
     }
 
 
+    // Category management
     const openManageCatBtn =
       document.getElementById('openManageCatBtn');
 
@@ -67,6 +78,7 @@ const AdminPortal = {
     }
 
 
+    // Customer directory
     const openUserListBtn =
       document.getElementById('openUserListBtn');
 
@@ -77,6 +89,20 @@ const AdminPortal = {
       };
 
     }
+
+
+    // Reorder stock
+    const reorderBtn =
+      document.getElementById('reorderBtn');
+
+    if (reorderBtn) {
+
+      reorderBtn.onclick = () => {
+        this.loadLowStock();
+      };
+
+    }
+
   },
 
 
@@ -88,21 +114,29 @@ const AdminPortal = {
 
     try {
 
-      const res = await API.getAdminStats();
+      const res =
+        await API.getAdminStats();
 
-      if (!res || !res.stats) {
+      if (
+        !res ||
+        !res.stats
+      ) {
+
         console.error(
           'Admin statistics could not be loaded.'
         );
+
         return;
+
       }
 
-      const stats = res.stats;
+      const stats =
+        res.stats;
 
 
-      // -----------------------------
-      // Revenue
-      // -----------------------------
+      // -------------------------------
+      // REVENUE
+      // -------------------------------
 
       const revenueElement =
         document.getElementById('kpiRevenue');
@@ -114,14 +148,27 @@ const AdminPortal = {
           stats.revenue ??
           0;
 
-        revenueElement.textContent =
-          Utils.formatCurrency(revenue);
+        if (
+          typeof Utils !== 'undefined' &&
+          typeof Utils.formatCurrency === 'function'
+        ) {
+
+          revenueElement.textContent =
+            Utils.formatCurrency(revenue);
+
+        } else {
+
+          revenueElement.textContent =
+            `Rs. ${Number(revenue).toLocaleString()}`;
+
+        }
+
       }
 
 
-      // -----------------------------
-      // Orders
-      // -----------------------------
+      // -------------------------------
+      // TOTAL ORDERS
+      // -------------------------------
 
       const ordersElement =
         document.getElementById('kpiOrders');
@@ -132,12 +179,13 @@ const AdminPortal = {
           stats.totalOrders ??
           stats.orders ??
           0;
+
       }
 
 
-      // -----------------------------
-      // Order Status
-      // -----------------------------
+      // -------------------------------
+      // ORDER STATUS
+      // -------------------------------
 
       const ordersSubElement =
         document.getElementById('kpiOrdersSub');
@@ -148,16 +196,19 @@ const AdminPortal = {
           stats.completedOrders ?? 0;
 
         const pending =
-          stats.pendingOrdersCount ?? 0;
+          stats.pendingOrders ??
+          stats.pendingOrdersCount ??
+          0;
 
         ordersSubElement.textContent =
           `${completed} Completed (${pending} Pending)`;
+
       }
 
 
-      // -----------------------------
-      // Low Stock
-      // -----------------------------
+      // -------------------------------
+      // LOW STOCK
+      // -------------------------------
 
       const lowStockElement =
         document.getElementById('kpiLowStock');
@@ -166,12 +217,13 @@ const AdminPortal = {
 
         lowStockElement.textContent =
           stats.lowStockCount ?? 0;
+
       }
 
 
-      // -----------------------------
-      // Customers
-      // -----------------------------
+      // -------------------------------
+      // USERS
+      // -------------------------------
 
       const usersElement =
         document.getElementById('kpiUsers');
@@ -180,14 +232,16 @@ const AdminPortal = {
 
         usersElement.textContent =
           stats.activeCustomers ??
+          stats.customers ??
           stats.users ??
           0;
+
       }
 
 
-      // -----------------------------
-      // Sales Chart
-      // -----------------------------
+      // -------------------------------
+      // SALES CHART
+      // -------------------------------
 
       this.renderSalesChart(stats);
 
@@ -199,11 +253,12 @@ const AdminPortal = {
       );
 
     }
+
   },
 
 
   // =====================================================
-  // SALES PERFORMANCE CHART
+  // SALES CHART
   // =====================================================
 
   renderSalesChart(stats) {
@@ -215,9 +270,13 @@ const AdminPortal = {
       return;
     }
 
-
     const ctx =
       canvas.getContext('2d');
+
+    if (!ctx) {
+      return;
+    }
+
 
     const width =
       canvas.width;
@@ -226,8 +285,6 @@ const AdminPortal = {
       canvas.height;
 
 
-    // Clear previous chart
-
     ctx.clearRect(
       0,
       0,
@@ -235,10 +292,6 @@ const AdminPortal = {
       height
     );
 
-
-    // ===================================================
-    // ACTUAL DATABASE SALES DATA
-    // ===================================================
 
     const days = [
       'Mon',
@@ -252,10 +305,10 @@ const AdminPortal = {
 
 
     const sales =
-      stats.salesByDay || [];
+      Array.isArray(stats.salesByDay)
+        ? stats.salesByDay
+        : [];
 
-
-    // Create seven days of data
 
     const data =
       days.map(day => {
@@ -263,12 +316,17 @@ const AdminPortal = {
         const found =
           sales.find(item => {
 
-            if (!item || !item.day) {
+            if (
+              !item ||
+              !item.day
+            ) {
+
               return false;
+
             }
 
             return (
-              item.day
+              String(item.day)
                 .trim()
                 .toLowerCase() ===
               day.toLowerCase()
@@ -290,10 +348,6 @@ const AdminPortal = {
       });
 
 
-    // ===================================================
-    // CHART SETTINGS
-    // ===================================================
-
     const maxVal =
       Math.max(
         ...data,
@@ -304,20 +358,18 @@ const AdminPortal = {
     const padding = 40;
 
     const chartW =
-      width -
-      padding * 2;
+      width - padding * 2;
 
     const chartH =
-      height -
-      padding * 2;
+      height - padding * 2;
 
 
-    // ===================================================
-    // GRID LINES
-    // ===================================================
+    // -------------------------------
+    // GRID
+    // -------------------------------
 
     ctx.strokeStyle =
-      'rgba(255, 255, 255, 0.08)';
+      'rgba(255,255,255,0.08)';
 
     ctx.lineWidth = 1;
 
@@ -332,7 +384,6 @@ const AdminPortal = {
         padding +
         (chartH / 4) * i;
 
-
       ctx.beginPath();
 
       ctx.moveTo(
@@ -346,12 +397,13 @@ const AdminPortal = {
       );
 
       ctx.stroke();
+
     }
 
 
-    // ===================================================
-    // CREATE DATA POINTS
-    // ===================================================
+    // -------------------------------
+    // POINTS
+    // -------------------------------
 
     const points =
       data.map(
@@ -386,9 +438,9 @@ const AdminPortal = {
       );
 
 
-    // ===================================================
-    // GRADIENT AREA
-    // ===================================================
+    // -------------------------------
+    // GRADIENT
+    // -------------------------------
 
     const gradient =
       ctx.createLinearGradient(
@@ -401,116 +453,121 @@ const AdminPortal = {
 
     gradient.addColorStop(
       0,
-      'rgba(16, 185, 129, 0.4)'
+      'rgba(16,185,129,0.4)'
     );
 
 
     gradient.addColorStop(
       1,
-      'rgba(16, 185, 129, 0)'
+      'rgba(16,185,129,0)'
     );
 
 
-    ctx.beginPath();
+    // -------------------------------
+    // AREA
+    // -------------------------------
+
+    if (points.length > 0) {
+
+      ctx.beginPath();
 
 
-    points.forEach(
-      (point, index) => {
+      points.forEach(
+        (point, index) => {
 
-        if (index === 0) {
+          if (index === 0) {
 
-          ctx.moveTo(
-            point.x,
-            point.y
-          );
+            ctx.moveTo(
+              point.x,
+              point.y
+            );
 
-        } else {
+          } else {
 
-          ctx.lineTo(
-            point.x,
-            point.y
-          );
+            ctx.lineTo(
+              point.x,
+              point.y
+            );
+
+          }
 
         }
-
-      }
-    );
+      );
 
 
-    // Complete area
-
-    ctx.lineTo(
-      points[
-        points.length - 1
-      ].x,
-      height - padding
-    );
+      ctx.lineTo(
+        points[points.length - 1].x,
+        height - padding
+      );
 
 
-    ctx.lineTo(
-      points[0].x,
-      height - padding
-    );
+      ctx.lineTo(
+        points[0].x,
+        height - padding
+      );
 
 
-    ctx.closePath();
+      ctx.closePath();
 
 
-    ctx.fillStyle =
-      gradient;
+      ctx.fillStyle =
+        gradient;
 
-    ctx.fill();
+      ctx.fill();
 
-
-    // ===================================================
-    // DRAW SALES LINE
-    // ===================================================
-
-    ctx.beginPath();
+    }
 
 
-    points.forEach(
-      (point, index) => {
+    // -------------------------------
+    // SALES LINE
+    // -------------------------------
 
-        if (index === 0) {
+    if (points.length > 0) {
 
-          ctx.moveTo(
-            point.x,
-            point.y
-          );
+      ctx.beginPath();
 
-        } else {
 
-          ctx.lineTo(
-            point.x,
-            point.y
-          );
+      points.forEach(
+        (point, index) => {
+
+          if (index === 0) {
+
+            ctx.moveTo(
+              point.x,
+              point.y
+            );
+
+          } else {
+
+            ctx.lineTo(
+              point.x,
+              point.y
+            );
+
+          }
 
         }
-
-      }
-    );
+      );
 
 
-    ctx.strokeStyle =
-      '#10b981';
+      ctx.strokeStyle =
+        '#10b981';
 
-    ctx.lineWidth = 3;
+      ctx.lineWidth = 3;
 
-    ctx.stroke();
+      ctx.stroke();
+
+    }
 
 
-    // ===================================================
-    // DATA DOTS + LABELS
-    // ===================================================
+    // -------------------------------
+    // POINTS + LABELS
+    // -------------------------------
 
     points.forEach(
       (point, index) => {
 
-
-        // ---------------------------
-        // Dot
-        // ---------------------------
+        // Circle
 
         ctx.beginPath();
 
@@ -521,7 +578,6 @@ const AdminPortal = {
           0,
           Math.PI * 2
         );
-
 
         ctx.fillStyle =
           '#ffffff';
@@ -537,9 +593,7 @@ const AdminPortal = {
         ctx.stroke();
 
 
-        // ---------------------------
-        // Revenue value
-        // ---------------------------
+        // Revenue label
 
         ctx.fillStyle =
           '#ffffff';
@@ -550,7 +604,6 @@ const AdminPortal = {
         ctx.textAlign =
           'center';
 
-
         ctx.fillText(
           `Rs. ${point.value.toLocaleString()}`,
           point.x,
@@ -558,16 +611,10 @@ const AdminPortal = {
         );
 
 
-        // ---------------------------
         // Day label
-        // ---------------------------
 
         ctx.fillStyle =
           '#9ca3af';
-
-        ctx.font =
-          '12px Arial';
-
 
         ctx.fillText(
           days[index],
@@ -577,6 +624,228 @@ const AdminPortal = {
 
       }
     );
+
+  },
+
+
+  // =====================================================
+  // LOW STOCK / REORDER
+  // =====================================================
+
+  async loadLowStock() {
+
+    try {
+
+      const res =
+        await API.getProducts();
+
+
+      if (
+        !res ||
+        !res.success
+      ) {
+
+        alert(
+          '❌ Unable to load products.'
+        );
+
+        return;
+
+      }
+
+
+      const products =
+        Array.isArray(res.products)
+          ? res.products
+          : [];
+
+
+      // Find products that need reorder
+
+      const lowStockProducts =
+        products.filter(product => {
+
+          const stock =
+            Number(
+              product.stock || 0
+            );
+
+
+          const reorderLevel =
+            Number(
+              product.lowStockLimit || 15
+            );
+
+
+          return (
+            stock <= reorderLevel
+          );
+
+        });
+
+
+      // No low stock products
+
+      if (
+        lowStockProducts.length === 0
+      ) {
+
+        alert(
+          '✅ No products require reorder.'
+        );
+
+        return;
+
+      }
+
+
+      // -------------------------------
+      // PROCESS EACH PRODUCT
+      // -------------------------------
+
+      for (
+        let index = 0;
+        index < lowStockProducts.length;
+        index++
+      ) {
+
+        const product =
+          lowStockProducts[index];
+
+
+        const currentStock =
+          Number(
+            product.stock || 0
+          );
+
+
+        const reorderLevel =
+          Number(
+            product.lowStockLimit || 15
+          );
+
+
+        // Ask quantity
+
+        const quantity =
+          prompt(
+            `⚠️ PRODUCT REQUIRING REORDER\n\n` +
+            `${index + 1}. ${product.name}\n\n` +
+            `Current Stock: ${currentStock}\n` +
+            `Reorder Level: ${reorderLevel}\n\n` +
+            `Enter quantity to add:`,
+            '10'
+          );
+
+
+        // User cancelled
+
+        if (
+          quantity === null
+        ) {
+
+          continue;
+
+        }
+
+
+        const addQuantity =
+          Number(quantity);
+
+
+        // Validate
+
+        if (
+          !Number.isInteger(addQuantity) ||
+          addQuantity <= 0
+        ) {
+
+          alert(
+            '❌ Please enter a valid positive whole number.'
+          );
+
+          continue;
+
+        }
+
+
+        const newStock =
+          currentStock +
+          addQuantity;
+
+
+        try {
+
+          // Update database
+
+          const updateRes =
+            await API.updateProduct(
+              product.id,
+              {
+                stock: newStock
+              }
+            );
+
+
+          if (
+            updateRes &&
+            updateRes.success
+          ) {
+
+            alert(
+              `✅ REORDER SUCCESSFUL!\n\n` +
+              `Product: ${product.name}\n` +
+              `Old Stock: ${currentStock}\n` +
+              `Added: ${addQuantity}\n` +
+              `New Stock: ${newStock}`
+            );
+
+          } else {
+
+            alert(
+              `❌ Reorder failed.\n\n` +
+              `${
+                updateRes?.message ||
+                'Unable to update stock.'
+              }`
+            );
+
+          }
+
+        } catch (error) {
+
+          console.error(
+            'Reorder update error:',
+            error
+          );
+
+
+          alert(
+            '❌ Failed to update product stock.'
+          );
+
+        }
+
+      }
+
+
+      // Refresh dashboard
+
+      await this.loadStats();
+
+    } catch (error) {
+
+      console.error(
+        'Low stock error:',
+        error
+      );
+
+
+      alert(
+        '❌ Unable to load low stock products.'
+      );
+
+    }
 
   },
 
@@ -667,22 +936,282 @@ const AdminPortal = {
 
 
 // =======================================================
-// INITIALIZE ADMIN PORTAL
+// START ADMIN PORTAL
 // =======================================================
 
 document.addEventListener(
   'DOMContentLoaded',
   () => {
 
-    if (
-      document.getElementById('adminView')
-    ) {
+    const adminView =
+      document.getElementById('adminView');
+
+    if (adminView) {
 
       AdminPortal.init();
 
     }
 
   }
-);/**
- * Admin Portal & Dashboard Analytics Logic
- */
+);
+
+
+// =======================================================
+// STAFF MANAGEMENT
+// =======================================================
+
+window.openStaffManagement = async function () {
+
+  try {
+
+    const res = await fetch('/api/users');
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert('Unable to load users.');
+      return;
+    }
+
+    const users = data.users || [];
+
+    const staffUsers = users.filter(
+      user => user.role === 'staff'
+    );
+
+    let message = '👨‍💼 STAFF MANAGEMENT\n\n';
+
+    if (staffUsers.length === 0) {
+
+      message += 'No staff accounts found.\n';
+
+    } else {
+
+      staffUsers.forEach((user, index) => {
+
+        message +=
+          `${index + 1}. ${user.name}\n` +
+          `   Email: ${user.email}\n` +
+          `   Role: ${user.role}\n\n`;
+
+      });
+
+    }
+
+    const action = prompt(
+      message +
+      '\n' +
+      'Type ADD to create a staff account\n' +
+      'Type DELETE to delete a staff account\n' +
+      'Type CANCEL to close'
+    );
+
+    if (!action) return;
+
+    const selectedAction =
+      action.trim().toUpperCase();
+
+
+    // ===================================================
+    // ADD STAFF
+    // ===================================================
+
+    if (selectedAction === 'ADD') {
+
+      const name = prompt(
+        'Enter staff full name:'
+      );
+
+      if (!name) return;
+
+      const email = prompt(
+        'Enter staff email:'
+      );
+
+      if (!email) return;
+
+      const password = prompt(
+        'Enter staff password:'
+      );
+
+      if (!password) return;
+
+
+      const createRes = await fetch(
+        '/api/users',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json'
+          },
+
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            password: password,
+            role: 'staff'
+          })
+        }
+      );
+
+
+      const createData =
+        await createRes.json();
+
+
+      if (
+        createData.success
+      ) {
+
+        alert(
+          '✅ Staff account created successfully!\n\n' +
+          `Name: ${name}\n` +
+          `Email: ${email}`
+        );
+
+      } else {
+
+        alert(
+          '❌ Failed to create staff account.\n\n' +
+          (
+            createData.message ||
+            'Unknown error'
+          )
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    // ===================================================
+    // DELETE STAFF
+    // ===================================================
+
+    if (selectedAction === 'DELETE') {
+
+      if (staffUsers.length === 0) {
+
+        alert(
+          'No staff accounts available.'
+        );
+
+        return;
+
+      }
+
+
+      const number =
+        prompt(
+          'Enter the number of the staff account to delete:\n\n' +
+          staffUsers
+            .map(
+              (user, index) =>
+                `${index + 1}. ${user.name} - ${user.email}`
+            )
+            .join('\n')
+        );
+
+
+      if (!number) return;
+
+
+      const index =
+        Number(number) - 1;
+
+
+      if (
+        !Number.isInteger(index) ||
+        !staffUsers[index]
+      ) {
+
+        alert(
+          '❌ Invalid staff number.'
+        );
+
+        return;
+
+      }
+
+
+      const user =
+        staffUsers[index];
+
+
+      const confirmDelete =
+        confirm(
+          `Delete this staff account?\n\n` +
+          `Name: ${user.name}\n` +
+          `Email: ${user.email}`
+        );
+
+
+      if (!confirmDelete) return;
+
+
+      const deleteRes =
+        await fetch(
+          `/api/users/${user.id}`,
+          {
+            method: 'DELETE'
+          }
+        );
+
+
+      const deleteData =
+        await deleteRes.json();
+
+
+      if (
+        deleteData.success
+      ) {
+
+        alert(
+          '✅ Staff account deleted successfully.'
+        );
+
+      } else {
+
+        alert(
+          '❌ Failed to delete staff account.\n\n' +
+          (
+            deleteData.message ||
+            'Unknown error'
+          )
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    if (
+      selectedAction !== 'CANCEL'
+    ) {
+
+      alert(
+        '❌ Invalid option.\n\n' +
+        'Please use ADD, DELETE or CANCEL.'
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      'Staff management error:',
+      error
+    );
+
+    alert(
+      '❌ Unable to open Staff Management.'
+    );
+
+  }
+
+};
